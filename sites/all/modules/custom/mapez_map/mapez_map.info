@@ -1,0 +1,5 @@
+name = Mapez Map
+description = Module to provide a custom map.
+package = Mapez
+core = 7.x
+

@@ -1,0 +1,27 @@
+<?php
+
+function mapez_map_menu() {
+
+  $items['mapez_map'] = array(
+    'title' => 'Mapez - find your dream house.',
+    'page callback' => 'mapez_map_render',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+function mapez_map_render() {
+  $maps = leaflet_map_get_info();
+  $offers = entity_load('node', FALSE, array('type' => 'offer'));
+  $data = array();
+  foreach ($offers as $offer) {
+    if (!empty($offer->field_location)) {
+      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
+      $data = array_merge($data, $points);
+    }
+  }
+
+  return leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
+}
