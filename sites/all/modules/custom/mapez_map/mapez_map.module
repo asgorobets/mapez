@@ -13,15 +13,17 @@ function mapez_map_menu() {
 }
 
 function mapez_map_render() {
-  $maps = leaflet_map_get_info();
-  $offers = entity_load('node', FALSE, array('type' => 'offer'));
-  $data = array();
-  foreach ($offers as $offer) {
-    if (!empty($offer->field_location)) {
-      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
-      $data = array_merge($data, $points);
-    }
-  }
-
-  return leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
+//  $maps = leaflet_map_get_info();
+//  $offers = entity_load('node', FALSE, array('type' => 'offer'));
+//  $data = array();
+//  foreach ($offers as $offer) {
+//    if (!empty($offer->field_location)) {
+//      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
+//      $points[0]['popup'] = drupal_render(node_view($offer, 'teaser'));
+//      $data = array_merge($data, $points);
+//    }
+//  }
+  //leaflet_render_map($maps['OSM Mapnik'], $data, '400px')
+  $default_map = mapez_search_update_map(NULL, NULL);
+  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>';
 }
