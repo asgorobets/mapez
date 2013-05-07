@@ -1,0 +1,197 @@
+<?php
+
+/**
+ * Implements hook_apachesolr_search_page_alter().
+ */
+function mapez_search_apachesolr_search_page_alter(&$build, $search_page) {
+  unset($build['search_form']);
+}
+
+function mapez_search_block_info() {
+  $blocks['search_filters'] = array(
+    'info' => t('Search Filters'),
+  );
+
+  return $blocks;
+}
+
+function mapez_search_block_view($delta) {
+  $block = array();
+
+  switch ($delta) {
+    case 'search_filters':
+      $block['content'] = drupal_render(drupal_get_form('mapez_search_sidebar_form'));
+      break;
+  }
+
+  return $block;
+}
+
+function mapez_search_sidebar_form() {
+  $form = array();
+
+  $field = field_info_field('field_offer_type');
+  $form['offer_type'] = array(
+    '#type' => 'radios',
+    '#default_value' => 4,
+    '#title' => t('Offer type'),
+    '#options' => taxonomy_allowed_values($field),
+  );
+
+  $field = field_info_field('field_district');
+  $form['district'] = array(
+    '#type' => 'select',
+    '#title' => t('District'),
+    '#options' => taxonomy_allowed_values($field),
+    //'default_value' => ''
+  );
+
+  $form['price'] = array(
+    '#title' => t('Price'),
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+  $form['price']['start'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['price']['end'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['rooms'] = array(
+    '#title' => t('Rooms'),
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+
+  $form['rooms']['start'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['rooms']['end'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['area'] = array(
+    '#title' => t('Area'),
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+  $form['area']['start'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['area']['end'] = array(
+    '#type' => 'textfield',
+    '#default_value' => 'Any',
+    '#attributes' => array('class' => array('input-mini')),
+  );
+
+  $form['actions']['submit'] = array(
+    '#value' => t('Search'),
+    '#type' => 'submit',
+    '#ajax' => array(
+      'callback' => 'mapez_search_update_map',
+      'wrapper' => 'leaflet-map-wrapper',
+      'method' => 'html',
+    ),
+  );
+
+  return $form;
+}
+
+function mapez_search_sidebar_form_submit($form, &$form_state) {
+  $fields = array('rooms', 'area');
+  foreach ($fields as $field) {
+    $_SESSION['search_filters'][$field] = $form_state['values'][$field];
+  }
+
+
+  $form_state['search_results'] = $results;
+}
+
+function mapez_search_update_map($form, $form_state) {
+  //$results = $form_state['search_results'];
+  $search = mapez_search_search_build();
+  $results = mapez_search_run_search($search);
+  $data = array();
+  foreach ($results as $result) {
+    $data[] = array(
+      'type' => 'point',
+      'lat' => $result['fields']['fs_location_lat'],
+      'lon' => $result['fields']['fs_location_lon'],
+      'popup' => $result['fields']['teaser'],
+    );
+  }
+
+  $maps = leaflet_map_get_info();
+  return leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
+}
+
+function mapez_search_run_search($search = NULL) {
+  try {
+    $search_page = apachesolr_search_page_load('core_search');
+    $solr = apachesolr_get_solr($search_page['env_id']);
+    // Default parameters
+    $params['fq'] = isset($search['filters']) ? $search['filters'] : array();
+    $params['rows'] = $search_page['settings']['apachesolr_search_per_page'];
+
+    $params['q'] = '';
+    $solrsort = isset($search['solrsort']) ? $search['solrsort'] : '';
+    $results = apachesolr_search_run('apachesolr', $params, $solrsort, $search_page['search_path'], pager_find_page(), $solr);
+    return $results;
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    apachesolr_failure(t('Solr search'), $keys);
+  }
+}
+
+function mapez_search_search_build() {
+  $search = array();
+
+  $filters = isset($_SESSION['search_filters']) ? $_SESSION['search_filters'] : array();
+
+  if (isset($filters['rooms'])) {
+
+    $range[] = str_replace('Any', '*', $filters['rooms']['start']);
+    $range[] = str_replace('Any', '*', $filters['rooms']['end']);
+    $search['filters'][] = 'its_field_rooms:[' . implode(' TO ', $range) . ']';
+  }
+
+  return $search;
+}
+
+function mapez_search_apachesolr_index_document_build_node($document, $entity, $env_id) {
+  if ($entity->type == 'offer') {
+    $document->teaser = drupal_render(node_view($entity, 'teaser'));
+    if (!empty($entity->field_location)) {
+      $data = leaflet_process_geofield($entity->field_location[LANGUAGE_NONE]);
+      $data = array_shift($data);
+      if ($data['type'] == 'point') {
+        $document->fs_location_lat = $data['lat'];
+        $document->fs_location_lon = $data['lon'];
+      }
+    }
+
+  }
+}
+
+function mapez_search_apachesolr_query_alter($query) {
+  $query->addParam('fl', 'fs_location_lat');
+  $query->addParam('fl', 'fs_location_lon');
+}

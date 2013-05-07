@@ -1,0 +1,5 @@
+name = Mapez Search
+description = Module to provide a custom search block.
+package = Mapez
+core = 7.x
+
