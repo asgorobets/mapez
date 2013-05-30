@@ -23,6 +23,9 @@ function leaflet_more_maps_leaflet_map_info() {
   $zyx = '{z}/{y}/{x}.png'; // as used by Esri
   // Google and Yandex also use x, y and z, but require different URL query
   // templates, see below.
+  // Bing uses the quadtree system whereby x, y and z are encoded in a sequence
+  // of digits in the range 0..3. See leaflet_more_maps.js for the conversion
+  // algorithm.
 
   $default_settings = array(
     'attributionControl' => TRUE,
@@ -41,6 +44,53 @@ function leaflet_more_maps_leaflet_map_info() {
     'zoomControl'        => TRUE,
   );
 
+  $attr_bing = '<a href="http://www.bing.com/maps">Bing</a> &copy; Microsoft and suppliers';
+  $map_info['bing-road'] = array(
+    'label' => 'Bing roadmap (zoom 1..18)',
+    'description' => t('Bing roadmap'),
+    'settings' =>  array('minZoom' => 1) + $default_settings,
+    'layers' => array(
+      'earth' => array(
+        'type' => 'quad',
+        'urlTemplate' => $prot . 'ecn.t{s}.tiles.virtualearth.net/tiles/r{q}?g=1236',
+        'options' => array(
+          'attribution' => $attr_bing,
+          'subdomains' => array(0, 1, 2, 3, 4, 5, 6, 7)
+        )
+      )
+    )
+  );
+  $map_info['bing-satellite'] = array(
+    'label' => 'Bing satellite (zoom 1..19)',
+    'description' => t('Bing satellite'),
+    'settings' => array('minZoom' => 1, 'maxZoom' => 19) + $default_settings,
+    'layers' => array(
+      'earth' => array(
+        'type' => 'quad',
+        'urlTemplate' => $prot . 'ak.t{s}.tiles.virtualearth.net/tiles/a{q}?g=1236',
+        'options' => array(
+          'attribution' => $attr_bing,
+          'subdomains' => array(0, 1, 2, 3)
+        )
+      )
+    )
+  );
+  $map_info['bing-hybrid'] = array(
+    'label' => 'Bing hybrid (zoom 1..18)',
+    'description' => t('Bing hybrid'),
+    'settings' => array('minZoom' => 1) + $default_settings,
+    'layers' => array(
+      'earth' => array(
+        'type' => 'quad',
+        'urlTemplate' => $prot . 'ak.dynamic.t{s}.tiles.virtualearth.net/comp/ch/{q}?it=A,G,L&shading=hill',
+        'options' => array(
+          'attribution' => $attr_bing,
+          'subdomains' => array(0, 1, 2, 3)
+        )
+      )
+    )
+  );
+
   $attr_google = 'Map data &copy; <a href="http://googlemaps.com">Google</a>';
   $map_info['google-road'] = array(
     'label' => 'Google roadmap',
@@ -54,7 +104,8 @@ function leaflet_more_maps_leaflet_map_info() {
         'options' => array(
           'attribution' => $attr_google,
           'detectRetina' => FALSE,
-          'subdomains' => array(0, 1, 2, 3))
+          'subdomains' => array(0, 1, 2, 3)
+        )
       )
     )
   );
@@ -71,7 +122,8 @@ function leaflet_more_maps_leaflet_map_info() {
         'options' => array(
           'attribution' => $attr_google,
           'detectRetina' => TRUE,
-          'subdomains' => array(0, 1, 2, 3))
+          'subdomains' => array(0, 1, 2, 3)
+        )
       )
     )
   );
@@ -86,7 +138,8 @@ function leaflet_more_maps_leaflet_map_info() {
         'options' => array(
           'attribution' => $attr_google,
           'detectRetina' => TRUE,
-          'subdomains' => array(0, 1, 2, 3))
+          'subdomains' => array(0, 1, 2, 3)
+        )
       )
     )
   );
