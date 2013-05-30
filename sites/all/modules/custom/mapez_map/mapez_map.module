@@ -13,17 +13,44 @@ function mapez_map_menu() {
 }
 
 function mapez_map_render() {
-//  $maps = leaflet_map_get_info();
-//  $offers = entity_load('node', FALSE, array('type' => 'offer'));
-//  $data = array();
-//  foreach ($offers as $offer) {
-//    if (!empty($offer->field_location)) {
-//      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
-//      $points[0]['popup'] = drupal_render(node_view($offer, 'teaser'));
-//      $data = array_merge($data, $points);
-//    }
-//  }
-  //leaflet_render_map($maps['OSM Mapnik'], $data, '400px')
-  $default_map = mapez_search_update_map(NULL, NULL);
+  $maps = leaflet_map_get_info();
+  $offers = entity_load('node', FALSE, array('type' => 'offer'));
+  $data = array();
+  foreach ($offers as $offer) {
+    if (!empty($offer->field_location)) {
+      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
+      $points[0]['popup'] = drupal_render(node_view($offer, 'teaser'));
+      $data = array_merge($data, $points);
+    }
+  }
+
+  $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
   return '<div id="leaflet-map-wrapper">' . $default_map . '</div>';
+}
+
+/**
+ * Our own copy of leaflet_render_map to avoid incremental #id generation.
+ */
+function mapez_map_leaflet_render_map($map, $features = array(), $height = '400px') {
+  $map_id = 'leaflet-map';
+  drupal_add_library('leaflet', 'leaflet-drupal');
+
+  // Allow map definitions to provide a default icon
+  if (isset($map['icon']['iconUrl'])) {
+    foreach ($features as &$feature) {
+      if (!isset($feature['icon'])) {
+        $feature['icon'] = $map['icon'];
+      }
+    }
+  }
+
+  $settings = array(
+    'mapId' => $map_id,
+    'map' => $map,
+    'features' => $features,
+  );
+
+  drupal_add_js(array('leaflet' => array($settings)), 'setting');
+
+  return theme('leaflet_map', array('map_id' => $map_id, 'height' => $height));
 }

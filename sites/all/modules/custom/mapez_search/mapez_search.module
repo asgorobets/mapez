@@ -20,7 +20,8 @@ function mapez_search_block_view($delta) {
 
   switch ($delta) {
     case 'search_filters':
-      $block['content'] = drupal_render(drupal_get_form('mapez_search_sidebar_form'));
+      $form = drupal_get_form('mapez_search_sidebar_form');
+      $block['content'] = drupal_render($form);
       break;
   }
 
@@ -106,8 +107,6 @@ function mapez_search_sidebar_form() {
     '#type' => 'submit',
     '#ajax' => array(
       'callback' => 'mapez_search_update_map',
-      'wrapper' => 'leaflet-map-wrapper',
-      'method' => 'html',
     ),
   );
 
@@ -125,7 +124,6 @@ function mapez_search_sidebar_form_submit($form, &$form_state) {
 }
 
 function mapez_search_update_map($form, $form_state) {
-  //$results = $form_state['search_results'];
   $search = mapez_search_search_build();
   $results = mapez_search_run_search($search);
   $data = array();
@@ -139,7 +137,11 @@ function mapez_search_update_map($form, $form_state) {
   }
 
   $maps = leaflet_map_get_info();
-  return leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
+  $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
+  $rendered_map = '<div id="leaflet-map-wrapper">' . $default_map . '</div>';
+  $commands = array();
+  $commands[] = ajax_command_replace('#leaflet-map-wrapper', $rendered_map);
+  return array('#type' => 'ajax', '#commands' => $commands);
 }
 
 function mapez_search_run_search($search = NULL) {
