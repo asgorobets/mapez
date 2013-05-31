@@ -8,3 +8,5 @@ tmp/**/*
 _site
 dist/*.js
 spec/coverage
+!/dist/leaflet.js
+!/dist/leaflet-src.js
