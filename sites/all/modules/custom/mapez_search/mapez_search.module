@@ -1,12 +1,10 @@
 <?php
 
 /**
- * Implements hook_apachesolr_search_page_alter().
+ * Implements hook_block_info().
+ *
+ * Add search filters form block.
  */
-function mapez_search_apachesolr_search_page_alter(&$build, $search_page) {
-  unset($build['search_form']);
-}
-
 function mapez_search_block_info() {
   $blocks['search_filters'] = array(
     'info' => t('Search Filters'),
@@ -15,6 +13,11 @@ function mapez_search_block_info() {
   return $blocks;
 }
 
+/**
+ * Implements hook_block_view().
+ *
+ * Render filters form block.
+ */
 function mapez_search_block_view($delta) {
   $block = array();
 
@@ -28,6 +31,9 @@ function mapez_search_block_view($delta) {
   return $block;
 }
 
+/**
+ * Define sidebar filters form.
+ */
 function mapez_search_sidebar_form() {
   $form = array();
 
@@ -113,6 +119,9 @@ function mapez_search_sidebar_form() {
   return $form;
 }
 
+/**
+ * Submit callback for mapez_search_sidebar_form.
+ */
 function mapez_search_sidebar_form_submit($form, &$form_state) {
   $fields = array('rooms', 'area');
   foreach ($fields as $field) {
@@ -123,6 +132,11 @@ function mapez_search_sidebar_form_submit($form, &$form_state) {
   $form_state['search_results'] = $results;
 }
 
+/**
+ * Ajax callback.
+ *
+ * Update map and titles on form submission.
+ */
 function mapez_search_update_map($form, $form_state) {
   $search = mapez_search_search_build();
   $results = mapez_search_run_search($search);
@@ -144,6 +158,12 @@ function mapez_search_update_map($form, $form_state) {
   return array('#type' => 'ajax', '#commands' => $commands);
 }
 
+/**
+ * Simplified search  callback.
+ *
+ * @param array $search
+ * @return array
+ */
 function mapez_search_run_search($search = NULL) {
   try {
     $search_page = apachesolr_search_page_load('core_search');
@@ -163,6 +183,9 @@ function mapez_search_run_search($search = NULL) {
   }
 }
 
+/**
+ * Define search array to be used in mapez_search_run_search.
+ */
 function mapez_search_search_build() {
   $search = array();
 
@@ -178,6 +201,14 @@ function mapez_search_search_build() {
   return $search;
 }
 
+/**
+ * Implements hook_apachesolr_index_document_build_node().
+ *
+ * Add fully rendered teaser to the solr document in order to display
+ * it on the map.
+ *
+ * Add geofield coordinates.
+ */
 function mapez_search_apachesolr_index_document_build_node($document, $entity, $env_id) {
   if ($entity->type == 'offer') {
     $document->teaser = drupal_render(node_view($entity, 'teaser'));
@@ -193,6 +224,11 @@ function mapez_search_apachesolr_index_document_build_node($document, $entity, $
   }
 }
 
+/**
+ * Implements hook_apachesolr_query_alter().
+ *
+ * Add geofield coordinates to the returned solr document.
+ */
 function mapez_search_apachesolr_query_alter($query) {
   $query->addParam('fl', 'fs_location_lat');
   $query->addParam('fl', 'fs_location_lon');

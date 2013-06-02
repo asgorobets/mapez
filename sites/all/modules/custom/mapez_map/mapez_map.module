@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Implements hook_menu().
+ *
+ * Add page with the map.
+ */
 function mapez_map_menu() {
 
   $items['mapez_map'] = array(
@@ -12,6 +17,11 @@ function mapez_map_menu() {
   return $items;
 }
 
+/**
+ * Menu callback.
+ *
+ * Render initial map with presaved filters.
+ */
 function mapez_map_render() {
   $maps = leaflet_map_get_info();
   $offers = entity_load('node', FALSE, array('type' => 'offer'));
@@ -22,10 +32,12 @@ function mapez_map_render() {
       $points[0]['popup'] = drupal_render(node_view($offer, 'teaser'));
       $data = array_merge($data, $points);
     }
+    $titles[] = $offer->title;
   }
 
   $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
-  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>';
+  $default_list = theme('item_list', array('items' => $titles));
+  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>' . $default_list;
 }
 
 /**
