@@ -37,7 +37,8 @@ function mapez_map_render() {
 
   $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
   $default_list = theme('item_list', array('items' => $titles));
-  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>' . $default_list;
+  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>' .
+         '<div class="results-list">' . $default_list . '</div>';
 }
 
 /**
