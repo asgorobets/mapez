@@ -80,9 +80,5 @@
         <?php print render($page['sidebar_second']); ?>
       </aside>  <!-- /#sidebar-second -->
     <?php endif; ?>
-
   </div>
-  <footer class="footer container">
-    <?php print render($page['footer']); ?>
-  </footer>
 </div>

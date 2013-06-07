@@ -14,7 +14,7 @@ regions[sidebar_second] = 'Secondary'
 regions[footer]         = 'Footer'
 
 stylesheets[all][] = css/mapez_style.css
-
+scripts[] = js/script.js
 settings[toggle_name] = 0
 settings[toggle_search] = 1
 settings[cdn_bootstrap] = 0
