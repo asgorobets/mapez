@@ -68,7 +68,7 @@ right:-10px;
 .container {
  width:100%;
 }
-#leaflet-map {
+#leaflet-map-wrapper #leaflet-map {
  width:100%;
  height:auto;
 }
@@ -78,7 +78,7 @@ right:-10px;
  margin-left:0;
  height:100%;
 }
-.leaflet-left {
+#leaflet-map-wrapper .leaflet-left {
  left:77.8%;
 }
 
@@ -124,4 +124,8 @@ right:-10px;
 }
 .control-group {
  margin-bottom:5px;
+}
+
+.result-lon, .result-lat {
+  display:none;
 }
