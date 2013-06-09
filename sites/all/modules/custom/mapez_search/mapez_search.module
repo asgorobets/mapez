@@ -35,12 +35,14 @@ function mapez_search_block_view($delta) {
  * Define sidebar filters form.
  */
 function mapez_search_sidebar_form() {
+  $filters = isset($_SESSION['search_filters']) ? $_SESSION['search_filters'] : array();
+
   $form = array();
 
   $field = field_info_field('field_offer_type');
   $form['offer_type'] = array(
     '#type' => 'radios',
-    '#default_value' => 4,
+    '#default_value' => isset($filters['offer_type']) ? $filters['offer_type'] : 4,
     '#title' => t('Offer type'),
     '#options' => taxonomy_allowed_values($field),
   );
@@ -50,7 +52,8 @@ function mapez_search_sidebar_form() {
     '#type' => 'select',
     '#title' => t('District'),
     '#options' => taxonomy_allowed_values($field),
-    //'default_value' => ''
+    '#default_value' => isset($filters['district']) ? $filters['district'] : '',
+    '#multiple' => TRUE,
   );
 
   $form['price'] = array(
@@ -61,14 +64,14 @@ function mapez_search_sidebar_form() {
 
   $form['price']['start'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['price']['start']) ? $filters['price']['start'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['price']['end'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['price']['end']) ? $filters['price']['end'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['rooms'] = array(
@@ -80,14 +83,14 @@ function mapez_search_sidebar_form() {
 
   $form['rooms']['start'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['rooms']['start']) ? $filters['rooms']['start'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['rooms']['end'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['rooms']['end']) ? $filters['rooms']['end'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['area'] = array(
@@ -98,14 +101,14 @@ function mapez_search_sidebar_form() {
 
   $form['area']['start'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['area']['start']) ? $filters['area']['start'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['area']['end'] = array(
     '#type' => 'textfield',
-    '#default_value' => 'Any',
-    '#attributes' => array('class' => array('input-mini')),
+    '#default_value' => isset($filters['area']['end']) ? $filters['area']['end'] : '',
+    '#attributes' => array('class' => array('input-mini'), 'placeholder' => 'Any'),
   );
 
   $form['actions']['submit'] = array(
@@ -113,6 +116,13 @@ function mapez_search_sidebar_form() {
     '#type' => 'submit',
     '#ajax' => array(
       'callback' => 'mapez_search_update_map',
+    ),
+  );
+  $form['actions']['reset'] = array(
+    '#value' => t('Reset'),
+    '#type' => 'submit',
+    '#ajax' => array(
+      'callback' => 'mapez_search_reset_filters',
     ),
   );
 
@@ -123,13 +133,14 @@ function mapez_search_sidebar_form() {
  * Submit callback for mapez_search_sidebar_form.
  */
 function mapez_search_sidebar_form_submit($form, &$form_state) {
-  $fields = array('rooms', 'area');
+  $fields = array('rooms', 'area', 'price','district','offer_type');
   foreach ($fields as $field) {
     $_SESSION['search_filters'][$field] = $form_state['values'][$field];
   }
+}
 
-
-  $form_state['search_results'] = $results;
+function mapez_search_reset_filters($form, $form_state) {
+  unset($_SESSION['search_filters']);
 }
 
 /**
@@ -138,6 +149,17 @@ function mapez_search_sidebar_form_submit($form, &$form_state) {
  * Update map and titles on form submission.
  */
 function mapez_search_update_map($form, $form_state) {
+  $results = mapez_search_render_results();
+  $commands = array();
+  $commands[] = ajax_command_replace('#leaflet-map-wrapper', $results['rendered_map']);
+  $commands[] = ajax_command_replace('.results-list', $results['results_list']);
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Fetches results returning a map and a list of results.
+ */
+function mapez_search_render_results() {
   $search = mapez_search_search_build();
   $results = mapez_search_run_search($search);
   $data = array();
@@ -148,14 +170,17 @@ function mapez_search_update_map($form, $form_state) {
       'lon' => $result['fields']['fs_location_lon'],
       'popup' => $result['fields']['teaser'],
     );
+    $titles[] = '<span class="result-item-title">' . $result['fields']['label'] . '</span>' .
+      '<span class="result-lon">' . $result['fields']['fs_location_lon'] .'</span>' .
+      '<span class="result-lat">' . $result['fields']['fs_location_lat'] .'</span>';
   }
 
   $maps = leaflet_map_get_info();
-  $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
-  $rendered_map = '<div id="leaflet-map-wrapper">' . $default_map . '</div>';
-  $commands = array();
-  $commands[] = ajax_command_replace('#leaflet-map-wrapper', $rendered_map);
-  return array('#type' => 'ajax', '#commands' => $commands);
+  $rendered_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '600px');
+  $results['rendered_map'] = '<div id="leaflet-map-wrapper">' . $rendered_map . '</div>';
+  $results_list = theme('item_list', array('items' => $titles));
+  $results['results_list'] = '<div class="results-list">' . $results_list . '</div>';
+  return $results;
 }
 
 /**
@@ -191,13 +216,19 @@ function mapez_search_search_build() {
 
   $filters = isset($_SESSION['search_filters']) ? $_SESSION['search_filters'] : array();
 
-  if (isset($filters['rooms'])) {
-
-    $range[] = str_replace('Any', '*', $filters['rooms']['start']);
-    $range[] = str_replace('Any', '*', $filters['rooms']['end']);
-    $search['filters'][] = 'its_field_rooms:[' . implode(' TO ', $range) . ']';
+  if (!empty($filters['offer_type'])) {
+    $search['filters'][] = 'im_vid_3:' . $filters['offer_type'];
   }
 
+  if (!empty($filters['district'])) {
+    $search['filters'][] = 'im_vid_1:(' . implode(' OR ', $filters['district']) . ')';
+  }
+
+  $range_filters = array('rooms', 'price', 'area');
+  foreach ($range_filters as $range_filter) {
+    mapez_search_range_filter_prepare($range_filter, $filters, $search);
+  }
+  //dpm($search);
   return $search;
 }
 
@@ -232,4 +263,17 @@ function mapez_search_apachesolr_index_document_build_node($document, $entity, $
 function mapez_search_apachesolr_query_alter($query) {
   $query->addParam('fl', 'fs_location_lat');
   $query->addParam('fl', 'fs_location_lon');
+}
+
+/**
+ * Helper to prepare ranged filters.
+ *
+ */
+function mapez_search_range_filter_prepare($name, $filters, &$search) {
+  if (isset($filters[$name])) {
+
+    $range[] = !empty($filters[$name]['start']) ? $filters[$name]['start'] : '*';
+    $range[] = !empty($filters[$name]['end']) ? $filters[$name]['end'] : '*';
+    $search['filters'][] = "its_field_$name:[" . implode(' TO ', $range) . ']';
+  }
 }

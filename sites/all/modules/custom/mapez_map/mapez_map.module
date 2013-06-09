@@ -23,22 +23,8 @@ function mapez_map_menu() {
  * Render initial map with presaved filters.
  */
 function mapez_map_render() {
-  $maps = leaflet_map_get_info();
-  $offers = entity_load('node', FALSE, array('type' => 'offer'));
-  $data = array();
-  foreach ($offers as $offer) {
-    if (!empty($offer->field_location)) {
-      $points = leaflet_process_geofield($offer->field_location[LANGUAGE_NONE]);
-      $points[0]['popup'] = drupal_render(node_view($offer, 'teaser'));
-      $data = array_merge($data, $points);
-    }
-    $titles[] = $offer->title;
-  }
-
-  $default_map = mapez_map_leaflet_render_map($maps['OSM Mapnik'], $data, '400px');
-  $default_list = theme('item_list', array('items' => $titles));
-  return '<div id="leaflet-map-wrapper">' . $default_map . '</div>' .
-         '<div class="results-list">' . $default_list . '</div>';
+  $results = mapez_search_render_results();
+  return $results['rendered_map'] . $results['results_list'];
 }
 
 /**
