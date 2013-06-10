@@ -3,7 +3,7 @@
   Drupal.behaviors.mapezMap = {
     attach: function (context, settings) {
       $('#leaflet-map-wrapper #leaflet-map').height($(window).height() -70);
-
+      $('#leaflet-map-wrapper #leaflet-map').width($(window).width() -250);
       $('.results-list li').click(function() {
         var lat = $(this).children('.result-lat').html();
         var lon = $(this).children('.result-lon').html();
@@ -21,5 +21,9 @@
     }
   };
 
+  $(window).resize(function() {
+    $('#leaflet-map-wrapper #leaflet-map').height($(window).height() -70);
+    $('#leaflet-map-wrapper #leaflet-map').width($(window).width() -250);
+  });
 
 })(jQuery);

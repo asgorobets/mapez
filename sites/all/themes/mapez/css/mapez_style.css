@@ -80,6 +80,7 @@ right:-10px;
 }
 #leaflet-map-wrapper .leaflet-left {
  left:77.8%;
+ display:none;
 }
 
 .results-list {
